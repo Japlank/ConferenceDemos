@@ -1,0 +1,94 @@
+heat_template_version: 2013-05-23
+
+description: This template deploys a  single compute server with security groups and a floating-ip
+
+parameters:
+  image:
+    type: string
+    description: Image used for servers
+    default: CentOS-7
+  key:
+    type: string
+    description: SSH key to connect to the servers
+    default: chandra-texas-3
+  flavor:
+    type: string
+    description: flavor used by the web servers
+    default: Micro-Small
+  public_network:
+    type: string
+    label: Public network name or ID
+    description: Public network with floating IP addresses.
+    default: public-floating-601
+  private_network:
+    type: string
+    label: Private network name or ID
+    description: Network to attach server to.
+    default: private
+  pool_id:
+    type: string
+    description: Pool to contact
+
+resources:
+
+  security_group:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      name: web_server_security_group
+      rules:
+        - protocol: icmp
+        - protocol: tcp
+          port_range_min: 22
+          port_range_max: 22
+        - protocol: tcp
+          port_range_min: 443
+          port_range_max: 443
+        - protocol: tcp
+          port_range_min: 80
+          port_range_max: 80
+  
+  apache_port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: private_network }
+      security_groups:
+        - { get_resource: security_group }
+
+  apache_instance:
+    type: OS::Nova::Server
+    properties:
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: key }
+      networks:
+        - port: { get_resource: apache_port }
+      user_data_format: RAW
+      user_data: |
+            #!/bin/bash
+
+            sudo -i
+            yum install httpd -y
+            yum install php -y
+            cd /root
+            git clone https://github.com/tarheelpro/CL.git
+            cp CL/showip.php /var/www/html/.
+            service httpd start
+            #more /var/www/html/index.html
+
+  member:
+    type: OS::Neutron::PoolMember
+    properties:
+      pool_id: {get_param: pool_id}
+      address: {get_attr: [apache_instance, first_address]}
+      protocol_port: 80          
+
+outputs:
+  name:
+    description: Name of the wordpress instance.
+    value: { get_attr: [apache_instance, name] }
+  ip:
+    description: The IP address of the wordpress instance.
+    value: { get_attr: [apache_instance, first_address] }
+  port:
+    description: The network port of the wordpress instance.
+    value: { get_resource: apache_port }

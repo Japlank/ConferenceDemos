@@ -1,0 +1,46 @@
+heat_template_version: 2013-05-23
+
+description: This template deploys a  single compute server with security groups and a floating-ip
+
+parameters:
+  image:
+    type: string
+    description: Image used for servers
+    default: CentOS-7
+  key:
+    type: string
+    description: SSH key to connect to the servers
+    default: chandra-texas-3
+  flavor:
+    type: string
+    description: flavor used by the web servers
+    default: Micro-Small
+  public_network:
+    type: string
+    label: Public network name or ID
+    description: Public network with floating IP addresses.
+    default: public-floating-601
+  
+
+resources:
+  network:
+    type: lib/private_network.yaml
+    properties:
+      public_network: { get_param: public_network }
+
+  apacheserver:
+    type: lib/apacheserver.yaml
+    properties:
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key: { get_param: key }
+      private_network: { get_attr: [network, name] }
+  
+  floating_ip:
+    type: lib/floating_ip.yaml
+    properties:
+      port: { get_attr: [apacheserver, port] }
+      public_network: { get_param: public_network }
+
+ 
+
