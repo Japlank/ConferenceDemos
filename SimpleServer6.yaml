@@ -31,18 +31,18 @@ resources:
 
 
   network:
-    type: lib/private_network.yaml
+    type: https://github.com/Japlank/ConferenceDemos/lib/private_network.yaml
     properties:
       public_network: { get_param: public_network }
 
   load_balancer:
-    type: lib/load_balancer.yaml
+    type: https://github.com/Japlank/ConferenceDemos/lib/load_balancer.yaml
     properties:
       #public_network: { get_param: public_network }
       private_subnet: {get_attr: [network, private_subnet_id]}
 
   apacheserver1:
-    type: lib/apacheserver_lb_sg.yaml
+    type: https://github.com/Japlank/ConferenceDemos/lib/apacheserver_lb_sg.yaml
     properties:
       image: { get_param: image }
       flavor: { get_param: flavor }
@@ -52,7 +52,7 @@ resources:
       servergroup_id: {get_resource: apache_servergroup}
 
   apacheserver2:
-    type: lib/apacheserver_lb_sg.yaml
+    type: https://github.com/Japlank/ConferenceDemos/lib/apacheserver_lb_sg.yaml
     properties:
       image: { get_param: image }
       flavor: { get_param: flavor }
@@ -62,7 +62,7 @@ resources:
       servergroup_id: {get_resource: apache_servergroup}
   
   floating_ip1:
-    type: lib/floating_ip.yaml
+    type: https://github.com/Japlank/ConferenceDemos/lib/floating_ip.yaml
     properties:
       port: { get_attr: [apacheserver1, port] }
       public_network: { get_param: public_network }
